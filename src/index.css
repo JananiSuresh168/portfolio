@@ -1,3 +1,8 @@
+/* ── Tokens ────────────────────────────────────────────────────────────────
+   Mobile-first: every value here is the phone value. Breakpoints below only
+   ever widen things. Breakpoints are in em (40/64/80em === 640/1024/1280px at
+   the default root size) so they track a reader's own font-size setting. */
+
 :root {
   /* Surface & ink — off-white ground, near-black type, one restrained accent */
   --bg: #fbfbf9;
@@ -9,12 +14,33 @@
 
   /* One easing, everywhere. Slow out, no overshoot. */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --reveal-duration: 600ms;
 
-  /* Narrow measure, wide margins */
+  /* Reveal: quicker and shorter-travelled on a phone, where the thumb moves
+     faster than the eye and a long fade just reads as lag. The stagger scale
+     collapses the per-item delays that pile up in lists. */
+  --reveal-duration: 420ms;
+  --reveal-shift: 12px;
+  --reveal-delay-scale: 0.35;
+
+  /* Fluid type. Each step interpolates between its 320px and 1280px size, so
+     headings grow continuously instead of stepping at a breakpoint. */
+  --step--2: clamp(0.6875rem, 0.66rem + 0.14vw, 0.75rem); /* 11 → 12 */
+  --step--1: clamp(0.8125rem, 0.792rem + 0.104vw, 0.875rem); /* 13 → 14 */
+  --step-0: clamp(0.9375rem, 0.91rem + 0.14vw, 1rem); /* 15 → 16 */
+  --step-1: clamp(1rem, 0.958rem + 0.209vw, 1.0625rem); /* 16 → 17 */
+  --step-2: clamp(1.0625rem, 0.958rem + 0.521vw, 1.375rem); /* 17 → 22 */
+  --step-3: clamp(1.125rem, 1.042rem + 0.417vw, 1.375rem); /* 18 → 22 */
+  --step-4: clamp(1.75rem, 1.583rem + 0.833vw, 2.25rem); /* 28 → 36 */
+  --step-5: clamp(1.5rem, 1.083rem + 2.083vw, 2.75rem); /* 24 → 44 */
+  --step-6: clamp(2.5rem, 1.583rem + 4.583vw, 5.25rem); /* 40 → 84 */
+
+  /* Measure & margins. --rail (the dates column) is deliberately absent here:
+     below 40em a row is a single column and there is no rail to size. */
   --measure: 46rem;
-  --gutter: 1.75rem;
-  --rail: 8.5rem;
+  --gutter: 1.25rem;
+
+  /* Minimum comfortable touch target. */
+  --tap: 2.75rem;
 
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
@@ -25,21 +51,61 @@
   text-rendering: optimizeLegibility;
 }
 
+@media (min-width: 40em) {
+  :root {
+    --gutter: 1.5rem;
+    --rail: 7rem;
+    --rail-gap: 1.75rem;
+    --reveal-duration: 600ms;
+    --reveal-shift: 20px;
+    --reveal-delay-scale: 1;
+  }
+}
+
+@media (min-width: 64em) {
+  :root {
+    /* Widened so the text column inside a rail row — the narrowest reading
+       column on the page, since the rail eats into it — still lands in the
+       65–75ch band rather than the ~57ch it would get at the old 46rem. */
+    --measure: 54rem;
+    --gutter: 1.75rem;
+    --rail: 8.5rem;
+    --rail-gap: 2.25rem;
+  }
+}
+
+@media (min-width: 80em) {
+  :root {
+    /* Past 1280 the measure only grows by what the wider gutter takes away —
+       the line length is already where it should be, so the extra room goes
+       to the margins. */
+    --measure: 56rem;
+    --gutter: 2.5rem;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 6rem;
+  /* Clears the sticky nav when jumping to an anchor. */
+  scroll-padding-top: clamp(4.5rem, 8vw, 5.5rem);
+  /* A net, not the fix: real overflow sources are handled at their source.
+     `clip` rather than `hidden` because `hidden` would break the sticky nav. */
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-size: 0.9375rem;
+  font-size: var(--step-0);
   line-height: 1.7;
+  /* Long unbroken tokens — URLs, an email, a Terraform module name — wrap
+     instead of pushing the page sideways at 320px. */
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -67,6 +133,13 @@ ol {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
 }
 
 :focus-visible {
