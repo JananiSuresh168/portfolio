@@ -9,26 +9,14 @@ Personal portfolio site. Live at <https://d3vb54akunf9wi.cloudfront.net>
 
 ## Architecture
 
-Thick arrows are the request path; thin arrows are the deploy path.
+Thick arrows are the request path, thin arrows the deploy.
 
 ```mermaid
-flowchart TB
-    BR["Browser"]
-    CF["CloudFront distribution<br/>default *.cloudfront.net certificate<br/>viewer policy: redirect-to-https<br/>403 and 404 rewritten to /index.html, 200"]
-    S3[("S3 · janani828-portfolio<br/>Block Public Access: all four on<br/>no website hosting<br/>policy allows only this distribution")]
+flowchart LR
+    BR["Browser"] ==>|"HTTPS"| CF["CloudFront"] ==>|"OAC"| S3[("S3 · private")]
 
-    BR ==>|"1 · HTTPS"| CF
-    CF ==>|"2 · OAC, SigV4-signed origin request"| S3
-    S3 ==>|"3 · object, or 403 for a key it will not serve"| CF
-    CF ==>|"4 · asset, or /index.html as 200"| BR
-
-    BUILD["npm run build"] --> DIST["dist/"]
-    DIST --> A1["aws s3 sync, assets first<br/>max-age=31536000, immutable"]
-    A1 --> A2["aws s3 sync, *.html second<br/>max-age=0, must-revalidate"]
-    A2 --> INV["aws cloudfront<br/>create-invalidation --paths /*"]
-    A1 -.->|"writes fingerprinted assets"| S3
-    A2 -.->|"writes index.html"| S3
-    INV -.->|"purges edge caches"| CF
+    BUILD["npm run build"] --> SYNC["aws s3 sync"] --> S3
+    SYNC --> INV["create-invalidation"] --> CF
 ```
 
 The bucket is only reachable through the distribution: its policy grants
